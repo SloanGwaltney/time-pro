@@ -16,9 +16,20 @@ model User {
 	name String
 	hashedPassword String
 	role UserRole
+	createdProejcts Project[]
+}
+
+model Project {
+	id Int      @id @default(autoincrement())
+	name String
+	number String
+	description String
+	createdBy User @relation(fields: [createdById], references: [id])
+	createdById Int
 }
 
 enum UserRole {
 	ADMIN
+	PROJECT_MANAGER
 	STANDARD
 }

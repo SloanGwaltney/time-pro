@@ -1,3 +1,5 @@
+import type { UserRole } from "@prisma/client";
+import type { Session } from "@remix-run/node";
 import { createCookieSessionStorage } from "@remix-run/node"; // or "@remix-run/cloudflare"
 
 const { getSession, commitSession, destroySession } =
@@ -21,4 +23,12 @@ const { getSession, commitSession, destroySession } =
     },
   });
 
-export { getSession, commitSession, destroySession };
+	function sessionHasRole(session: Session, role: UserRole) {
+		const sessionRole = session.get('userRole')
+		return sessionRole && sessionRole === role
+	}
+
+	function getSessionFromCookieHeader(request: Request) {
+		return getSession(request.headers.get('Cookie'))
+	}
+export { getSession, commitSession, destroySession, sessionHasRole, getSessionFromCookieHeader };
