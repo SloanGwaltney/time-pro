@@ -1,4 +1,4 @@
-import type { ChargeCode, Project} from "@prisma/client";
+import type { ChargeCode, Project, ProjectPersonnel, User} from "@prisma/client";
 import { UserRole } from "@prisma/client";
 import type { LoaderFunction } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
@@ -10,13 +10,13 @@ import { getSessionFromCookieHeader } from "~/session";
 export const loader: LoaderFunction = async ({request, params}) => {
 	const session = await getSessionFromCookieHeader(request)
 	await authorizeOrRedirect(session, UserRole.PROJECT_MANAGER, 'View a project')
-	const project = await prisma.project.findUnique({where: {id: Number(params.projectId)}, include: {chargeCodes: true}})
+	const project = await prisma.project.findUnique({where: {id: Number(params.projectId)}, include: {chargeCodes: true, assignedPersonnel: {include: {assignedUser: true}}}})
 	if (!project) throw new Response("Not Found", {status: 404})
 	return {project}
 }
 
 export default function ProjectView() {
-	const loaderData = useLoaderData() as {project: Project & {chargeCodes: ChargeCode[]}}
+	const loaderData = useLoaderData() as {project: Project & {chargeCodes: ChargeCode[], assignedPersonnel: (ProjectPersonnel & {assignedUser: User})[]}}
 
 	return (
 		<div>
@@ -32,6 +32,8 @@ export default function ProjectView() {
 			</div>
 			<h3>Charge Codes</h3>
 			<ChargeCodeTable chargeCodes={loaderData.project.chargeCodes} />
+			<h3>Assigned Personnel To Project</h3>
+			<AssignedPersonnelTable assignedPersonnel={loaderData.project.assignedPersonnel} />
 		</div>
 	)
 }
@@ -39,9 +41,11 @@ export default function ProjectView() {
 const ChargeCodeTable: React.FC<{chargeCodes: ChargeCode[]}> = ({chargeCodes}) => (
 	<Table>
 		<thead>
-			<td>Number</td>
-			<td>Name</td>
-			<td>Description</td>
+			<tr>
+				<td>Number</td>
+				<td>Name</td>
+				<td>Description</td>
+			</tr>
 		</thead>
 		<tbody>
 			{chargeCodes.map((code, i) => (
@@ -50,6 +54,25 @@ const ChargeCodeTable: React.FC<{chargeCodes: ChargeCode[]}> = ({chargeCodes}) =
 					<td>{code.name}</td>
 					<td>{code.description}</td>
 				</tr>
+			))}
+		</tbody>
+	</Table>
+)
+
+const AssignedPersonnelTable: React.FC<{assignedPersonnel: (ProjectPersonnel & {assignedUser: User})[]}> = ({assignedPersonnel}) => (
+	<Table>
+		<thead>
+			<tr>
+				<td>Name</td>
+				<td>Assigned At</td>
+			</tr>
+		</thead>
+		<tbody>
+			{assignedPersonnel.map((val, i) => (
+				<tr key={i}>
+					<td>{val.assignedUser.name}</td>
+					<td>{val.assignedAt}</td>
+				</tr>	
 			))}
 		</tbody>
 	</Table>

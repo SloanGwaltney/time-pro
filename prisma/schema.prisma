@@ -16,8 +16,9 @@ model User {
 	name String
 	hashedPassword String
 	role UserRole
-	createdProejcts Project[]
+	createdProejcts Project[] @relation("User created projects")
 	createdChargeCodes ChargeCode[]
+	assignedProject ProjectPersonnel[] @relation("User assigned projects")
 }
 
 model Project {
@@ -25,9 +26,19 @@ model Project {
 	name String
 	number String @unique
 	description String
-	createdBy User @relation(fields: [createdById], references: [id])
+	createdBy User @relation("User created projects", fields: [createdById], references: [id])
 	createdById Int
 	chargeCodes ChargeCode[]
+	assignedPersonnel ProjectPersonnel[]
+}
+
+model ProjectPersonnel {
+	assignedUser User @relation("User assigned projects", fields: [assignedUserId], references: [id])
+	assignedUserId Int
+	project Project @relation(fields: [projectId], references: [id])
+	projectId Int
+	assignedAt DateTime @default(now())
+	@@id([assignedUserId, projectId])
 }
 
 model ChargeCode {
